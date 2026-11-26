@@ -764,5 +764,15 @@
       atualizarSimuladorLembrete(state.consultas[0]);
     });
   </script>
+  <!-- Importando o cliente do Supabase via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = 'https://wnaxcdvuoryshmqtgdxn.supabase.co'; // Substitua com a URL correta do seu projeto
+const SUPABASE_ANON_KEY = 'sb_publishable_Zlyb58Ua3cbNN9HYkjs2og_ytxMtGkX'; // Sua Publishable key
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+console.log("Supabase conectado com sucesso!", supabase);
+</script>
 </body>
 </html>
