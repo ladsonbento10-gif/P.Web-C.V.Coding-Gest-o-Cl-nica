@@ -1,89 +1,279 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0D9488">
+  <title>CliniFlow - Gestão Inteligente de Consultas</title>
+  <!-- Favicon embutido: evita uma requisição 404 -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230D9488'/%3E%3Cpath d='M16 8v16M8 16h16' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <!-- Conexões antecipadas para CDNs e fonte -->
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Fonte com display=swap -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <!-- Ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: {
+      fontFamily: { sans: ["'Plus Jakarta Sans'", 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'] },
+      colors: { brand: { 50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 900: '#134E4A' } }
+    } } }
+  </script>
+  <style type="text/tailwindcss">
+    @layer base { body { @apply font-sans; } }
+    @layer components {
+      .card { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
+      .label { @apply block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1; }
+      .field { @apply w-full rounded-xl border border-slate-200 px-3.5 py-3 sm:py-2.5 text-base sm:text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500; }
+      .role-btn { @apply px-2.5 sm:px-3.5 py-2 sm:py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-700 transition-all; }
+      .role-btn.is-active { @apply font-semibold shadow-sm bg-white text-brand-700; }
+      .btn-sm { @apply px-3 py-2 sm:px-2.5 sm:py-1 font-bold rounded-lg text-xs transition; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/13.4.0/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/13.4.0/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/13.4.0/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/13.4.0/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/13.4.0/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/13.4.0/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/13.4.0/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/13.4.0/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/13.4.0/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/13.4.0/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+  <!-- Header / Navbar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i class="fa-solid fa-notes-medical text-lg"></i>
+        </div>
+        <div>
+          <span class="text-xl font-bold bg-gradient-to-r from-brand-700 to-teal-600 bg-clip-text text-transparent">CliniFlow</span>
+          <span class="text-xs hidden sm:block text-slate-400 font-medium leading-none">Gestão Clínica & Agendamento</span>
+        </div>
+      </div>
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+      <!-- Seletor de Perfil / Visualização -->
+      <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200" role="group" aria-label="Escolher perfil">
+        <button data-action="role" data-role="paciente" id="btn-role-paciente" class="role-btn is-active" aria-label="Paciente"><i class="fa-solid fa-user-injured sm:mr-1.5"></i><span class="hidden sm:inline">Paciente</span></button>
+        <button data-action="role" data-role="atendente" id="btn-role-atendente" class="role-btn" aria-label="Recepção"><i class="fa-solid fa-headset sm:mr-1.5"></i><span class="hidden sm:inline">Recepção</span></button>
+        <button data-action="role" data-role="medico" id="btn-role-medico" class="role-btn" aria-label="Médico"><i class="fa-solid fa-user-doctor sm:mr-1.5"></i><span class="hidden sm:inline">Médico</span></button>
+      </div>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+  </header>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+  <!-- Banner Informativo -->
+  <div class="bg-brand-50 border-b border-brand-100 py-2.5 px-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between text-xs sm:text-sm text-brand-900">
+      <div class="flex items-center flex-wrap gap-x-2 gap-y-1">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-brand-200 text-brand-900" id="badge-current-role">
+          Visão: Paciente
+        </span>
+        <span id="role-description" class="text-slate-600">
+          Você está na área de agendamento online e confirmação rápida.
+        </span>
+      </div>
+      <div class="text-slate-400 hidden sm:block">
+        MVP v1.0 (Vibe Coding)
+      </div>
+    </div>
+  </div>
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
-        }
+  <!-- Main Content Area -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    <div id="toast-container" role="status" aria-live="polite" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-5 sm:right-5 z-50 flex flex-col gap-2 sm:max-w-sm"></div>
+
+    <!-- VISÃO 1: PACIENTE -->
+    <div id="view-paciente" class="space-y-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="card lg:col-span-7 p-6">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-calendar-plus text-brand-600"></i> Agendar Nova Consulta
+              </h2>
+              <p class="text-sm text-slate-500">Escolha o profissional, data e informe seus dados.</p>
+            </div>
+            <span class="text-xs bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-md">Passo Único</span>
+          </div>
+
+          <form id="form-agendamento" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="label">Especialidade / Médico *</label>
+                <select id="select-medico" required class="field">
+                  <option value="">Selecione um médico...</option>
+                </select>
+              </div>
+              <div>
+                <label class="label">Data da Consulta *</label>
+                <input type="date" id="input-data" required class="field">
+              </div>
+            </div>
+
+            <div>
+              <label class="label mb-2">Horário Disponível *</label>
+              <div id="slots-container" class="grid grid-cols-4 gap-2">
+                <span class="text-xs text-slate-400 col-span-4 italic">Selecione médico e data para carregar os horários.</span>
+              </div>
+              <input type="hidden" id="selected-horario">
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="label">Nome Completo do Paciente *</label>
+                <input type="text" autocomplete="name" id="input-nome" placeholder="Ex: Lucas Mendes" required class="field">
+              </div>
+              <div>
+                <label class="label">WhatsApp / Telefone *</label>
+                <input type="tel" inputmode="tel" autocomplete="tel" id="input-telefone" placeholder="(11) 98765-4321" required class="field">
+              </div>
+            </div>
+
+            <div>
+              <label class="label">Motivo / Sintoma Principal (opcional)</label>
+              <textarea id="input-motivo" rows="2" placeholder="Ex: Check-up de rotina, dor nas costas..." class="field"></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-md shadow-brand-600/25 transition-all flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Confirmar Agendamento</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="lg:col-span-5 space-y-6">
+          <div class="card p-6">
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <i class="fa-brands fa-whatsapp text-green-600 text-lg"></i> Simulador de Lembrete WhatsApp
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">Veja como o paciente recebe o lembrete automatizado e confirma com 1 clique.</p>
+            <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 relative text-sm">
+              <div class="flex items-center space-x-2 pb-2 mb-2 border-b border-emerald-200/60">
+                <div class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs">
+                  <i class="fa-solid fa-hospital"></i>
+                </div>
+                <span class="font-bold text-emerald-900 text-xs">CliniFlow Alerta</span>
+                <span class="text-[10px] text-emerald-700 ml-auto">Hoje às 08:30</span>
+              </div>
+              <p class="text-xs text-slate-700 leading-relaxed" id="whatsapp-preview-text">
+                "Olá! Lembramos que você possui consulta marcada na <strong>CliniFlow</strong>."
+              </p>
+              <div class="mt-3 flex gap-2">
+                <button data-action="sim-confirmar" class="flex-1 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition">
+                  <i class="fa-solid fa-check mr-1"></i> Confirmar
+                </button>
+                <button data-action="sim-cancelar" class="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-300 transition">
+                  <i class="fa-solid fa-xmark mr-1"></i> Desmarcar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-brand-600"></i> Meus Agendamentos
+              </h3>
+              <span id="badge-total-paciente" class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">0</span>
+            </div>
+            <div id="lista-paciente-consultas" class="space-y-3 max-h-72 overflow-y-auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISÃO 2: ATENDENTE -->
+    <div id="view-atendente" class="hidden space-y-6">
+      <div id="metrics" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+      <div class="card overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-bell text-brand-600"></i> Central de Confirmação & Lembretes
+            </h2>
+            <p class="text-sm text-slate-500">Acompanhe o status e envie lembretes em tempo real.</p>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[640px] text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200">
+                <th class="py-3.5 px-4 sm:px-6">Paciente</th>
+                <th class="py-3.5 px-4 sm:px-6">Médico & Especialidade</th>
+                <th class="py-3.5 px-4 sm:px-6">Data & Hora</th>
+                <th class="py-3.5 px-4 sm:px-6">Status Confirmação</th>
+                <th class="py-3.5 px-4 sm:px-6 text-right">Ações Rápidas</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-atendente-consultas" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISÃO 3: MÉDICO -->
+    <div id="view-medico" class="hidden space-y-6">
+      <div class="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-days text-brand-600"></i> Gestão de Agenda Médica & Ausências
+          </h2>
+          <p class="text-sm text-slate-500">Controle horários, bloqueie datas e gerencie atendimentos.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <label class="text-xs font-bold text-slate-600 uppercase">Filtrar Médico:</label>
+          <select id="select-filtro-medico" class="field !w-auto font-medium"></select>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4">
+      CliniFlow © 2026 • Gestão de Clínica & Agendamento Inteligente
+    </div>
+  </footer>
+
+  <!-- Scripts JavaScript & Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://wnaxcdvuoryshmqtgdxn.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_Zlyb58Ua3cbNN9HYkjs2og_ytxMtGkX';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log("Supabase conectado com sucesso!", supabase);
+
+    const STORAGE_KEY = 'cliniflow_data_v1';
+    const HORARIOS_PADRAO = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
+    const MEDICOS = [
+      { id: 'Dr. Carlos Eduardo - Cardiologia', label: 'Dr. Carlos Eduardo (Cardiologia)' },
+      { id: 'Dra. Mariana Costa - Dermatologia', label: 'Dra. Mariana Costa (Dermatologia)' },
+      { id: 'Dr. Roberto Silva - Ortopedia', label: 'Dr. Roberto Silva (Ortopedia)' }
+    ];
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      // Popula os selects de médicos
+      const options = MEDICOS.map(m => `<option value="${esc(m.id)}">${esc(m.label)}</option>`).join('');
+      if($('select-medico')) $('select-medico').innerHTML = '<option value="">Selecione um médico...</option>' + options;
+      if($('select-filtro-medico')) $('select-filtro-medico').innerHTML = options;
+
+      // Eventos de navegação de papéis
+      document.querySelectorAll('[data-action="role"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const role = btn.dataset.role;
+          document.querySelectorAll('[data-action="role"]').forEach(b => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          ['paciente', 'atendente', 'medico'].forEach(r => {
+            const el = $(`view-${r}`);
+            if(el) el.classList.toggle('hidden', r !== role);
+          });
+          if($('badge-current-role')) $('badge-current-role').innerText = 'Visão: ' + role.charAt(0).toUpperCase() + role.slice(1);
+        });
       });
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>
