@@ -24,6 +24,168 @@
       fontFamily: { sans: ["'Plus Jakarta Sans'", 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'] },
       colors: { brand: { 50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 900: '#134E4A' } }
     } } }
+  <!-- Sistema Core em JavaScript integrado com Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ===== CONFIGURAÇÃO DO SUPABASE =====
+    const SUPABASE_URL = 'https://wnaxcdvuoryshmqtgdxn.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_Zlyb58Ua3cbNN9HYkjs2og_ytxMtGkX';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log("Supabase conectado com sucesso!", supabase);
+
+    const HORARIOS_PADRAO = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
+    const MEDICOS = [
+      { id: 'Dr. Carlos Eduardo - Cardiologia', label: 'Dr. Carlos Eduardo (Cardiologia)' },
+      { id: 'Dra. Mariana Costa - Dermatologia', label: 'Dra. Mariana Costa (Dermatologia)' },
+      { id: 'Dr. Roberto Silva - Ortopedia', label: 'Dr. Roberto Silva (Ortopedia)' }
+    ];
+    const STATUS_BADGE = {
+      Pendente: 'bg-amber-100 text-amber-800',
+      Confirmado: 'bg-green-100 text-green-800',
+      Cancelado: 'bg-red-100 text-red-800'
+    };
+    const ROLES = {
+      paciente: { badge: 'Visão: Paciente', desc: 'Agende online, selecione horários e confirme presença sem burocracia.' },
+      atendente: { badge: 'Visão: Recepção / Atendente', desc: 'Acompanhe confirmações e gerencie o fluxo em tempo real.' },
+      medico: { badge: 'Visão: Médico', desc: 'Gerencie sua grade, bloqueie horários e acompanhe seus pacientes.' }
+    };
+
+    // ===== UTILITÁRIOS =====
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const pad = n => String(n).padStart(2, '0');
+    const isoLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; const hojeISO = (somarDias = 0) => { const d = new Date(); d.setDate(d.getDate() + somarDias); return isoLocal(d); }; const formatDate = s => { if (!s) return ''; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
+    const badgeStatus = (status, extra = 'px-2.5 py-0.5 text-xs') =>
+      `<span class="inline-flex items-center rounded-full font-bold ${extra} ${STATUS_BADGE[status] \vert{}\vert{} STATUS_BADGE.Pendente}">${esc(status)}</span>`;
+    const emptyMsg = texto => `<p class="text-xs text-slate-400 italic">${texto}</p>`;  // ===== ESTADO DO APLICATIVO (Sincronizado com Supabase) ===== let state = { consultas: [], bloqueios: [], consultaSimulada: null };  // Funções de Comunicação com o Supabase async function carregarDadosDoBanco() { try { const { data: resConsultas, error: errC } = await supabase.from('consultas').select('*').order('created_at', { ascending: false }); if (errC) console.error('Erro ao buscar consultas:', errC);  const { data: resBloqueios, error: errB } = await supabase.from('bloqueios').select('*'); if (errB) console.error('Erro ao buscar bloqueios:', errB);  state.consultas = resConsultas \vert{}\vert{} []; state.bloqueios = resBloqueios \vert{}\vert{} [];  refreshAll(); } catch (e) { console.error('Erro de conexão com o Supabase:', e); showToast('Erro ao carregar dados do banco.', 'error'); } }  async function salvarConsultaNoBanco(novaConsulta) { const { error } = await supabase.from('consultas').insert([novaConsulta]); if (error) { showToast('Erro ao salvar agendamento no Supabase.', 'error'); console.error(error); return false; } return true; }  async function atualizarStatusConsultaNoBanco(id, novoStatus) { const { error } = await supabase.from('consultas').update({ status: novoStatus }).eq('id', id); if (error) { showToast('Erro ao atualizar status.', 'error'); return false; } return true; }  async function salvarBloqueioNoBanco(novoBloqueio) { const { error } = await supabase.from('bloqueios').insert([novoBloqueio]); if (error) { showToast('Erro ao bloquear horário.', 'error'); return false; } return true; }  const findConsulta = id => state.consultas.find(c => c.id === id);  function refreshAll() { renderListaPaciente(); renderAtendenteView(); renderAgendaMedico(); renderHorariosDisponiveis(); }  // ===== TOAST / NOTIFICAÇÕES ===== const TOAST_STYLE = { success: ['bg-emerald-600', 'fa-circle-check'], error: ['bg-red-600', 'fa-circle-exclamation'], info: ['bg-slate-800', 'fa-bell'] }; function showToast(message, type = 'success') { const [bg, icon] = TOAST_STYLE[type] \vert{}\vert{} TOAST_STYLE.info; const toast = document.createElement('div'); toast.className = `${bg} text-white px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-xs font-medium transform transition-all duration-300 translate-y-2 opacity-0`;
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${esc(message)}</span>`;
+      $('toast-container').appendChild(toast);
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // ===== RENDERIZAÇÃO DE TELAS =====
+    const SLOT_BASE = 'py-3 sm:py-2 rounded-xl text-xs font-semibold border';
+    const SLOT_OFF = 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed line-through';
+    const SLOT_FREE = 'slot-btn bg-white text-slate-700 border-slate-200 hover:border-brand-500 hover:bg-brand-50 transition';
+
+    function renderHorariosDisponiveis() {
+      const medico = $('select-medico').value;
+      const data = $('input-data').value;
+      const container = $('slots-container');
+      if(!$('selected-horario')) return;
+      $('selected-horario').value = '';
+
+      if (!medico || !data) {
+        container.innerHTML = `<span class="text-xs text-slate-400 col-span-4 italic">Selecione médico e data para carregar os horários.</span>`;
+        return;
+      }
+      const mesmoDia = x => x.medico === medico && x.data === data;
+      const ocupados = new Set(state.consultas.filter(c => mesmoDia(c) && c.status !== 'Cancelado').map(c => c.hora));
+      const bloqueados = new Set(state.bloqueios.filter(mesmoDia).map(b => b.hora));
+
+      container.innerHTML = HORARIOS_PADRAO.map(hora => {
+        const bloqueado = bloqueados.has(hora);
+        if (bloqueado || ocupados.has(hora)) {
+          const title = bloqueado ? 'Horário Bloqueado pelo Médico' : 'Horário já reservado';
+          return `<button type="button" disabled title="${title}" class="${SLOT_BASE} ${SLOT_OFF}">${hora}</button>`;
+        }
+        return `<button type="button" data-hora="${hora}" class="${SLOT_BASE} ${SLOT_FREE}" onclick="selectHorario(this)">${hora}</button>`;
+      }).join('');
+    }
+
+    window.selectHorario = function(btn) {
+      $('selected-horario').value = btn.dataset.hora;
+      document.querySelectorAll('.slot-btn').forEach(b => {
+        b.classList.remove('bg-brand-600', 'text-white', 'border-brand-600');
+        b.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+      });
+      btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+      btn.classList.add('bg-brand-600', 'text-white', 'border-brand-600');
+    }
+
+    async function handleAgendamento(e) {
+      e.preventDefault();
+      const medico = $('select-medico').value;
+      const data = $('input-data').value;
+      const hora = $('selected-horario').value;
+      const nome = $('input-nome').value.trim();
+
+      if (!hora) return showToast('Por favor, selecione um horário disponível.', 'error');
+      
+      const nova = {
+        id: 'c-' + Date.now(),
+        paciente: nome,
+        telefone: $('input-telefone').value.trim(),
+        medico, data, hora,
+        motivo: $('input-motivo').value.trim() || 'Não especificado',
+        status: 'Pendente',
+        lembrete_enviado: false,
+        aviso_cancelamento: null
+      };
+
+      const sucesso = await salvarConsultaNoBanco(nova);
+      if (sucesso) {
+        showToast(`Consulta agendada com sucesso para ${nome}!`);
+        $('form-agendamento').reset();
+        $('input-data').value = data;
+        await carregarDadosDoBanco();
+        atualizarSimuladorLembrete(nova);
+      }
+    }
+
+    function renderListaPaciente() {
+      const lista = state.consultas;
+      if($('badge-total-paciente')) $('badge-total-paciente').innerText = lista.length;
+      const container = $('lista-paciente-consultas');
+      if(!container) return;
+
+      container.innerHTML = lista.length === 0
+        ? emptyMsg('Nenhuma consulta agendada até o momento.')
+        : lista.map(c => `
+          <div class="p-3.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between gap-2 text-xs">
+            <div class="min-w-0">
+              <div class="font-bold text-slate-900">${esc(c.paciente)}</div>
+              <div class="text-slate-500">${esc(c.medico)}</div>
+              <div class="text-slate-400 mt-1"><i class="fa-regular fa-calendar mr-1"></i>${formatDate(c.data)} às ${c.hora}</div>
+            </div>
+            <div class="text-right shrink-0">${badgeStatus(c.status, 'px-2.5 py-1 text-[10px]')}</div>
+          </div>`).join('');
+    }
+
+    function atualizarSimuladorLembrete(consulta) {
+      if (!consulta) return;
+      state.consultaSimulada = consulta.id;
+      const preview = $('whatsapp-preview-text');
+      if(preview) {
+        preview.innerHTML = `"Olá, <strong>${esc(consulta.paciente)}</strong>! Lembramos que sua consulta com <strong>${esc(consulta.medico)}</strong> está marcada para <strong>${formatDate(consulta.data)} às ${consulta.hora}</strong>."`;
+      }
+    }
+
+    window.simularResposta = async function(novoStatus) {
+      const c = findConsulta(state.consultaSimulada);
+      if (!c) return showToast('Nenhuma consulta ativa no lembrete.', 'error');
+      const sucesso = await atualizarStatusConsultaNoBanco(c.id, novoStatus);
+      if (sucesso) {
+        await carregarDadosDoBanco();
+        showToast(novoStatus === 'Confirmado' ? 'Presença confirmada!' : 'Consulta desmarcada.', novoStatus === 'Confirmado' ? 'success' : 'error');
+      }
+    }
+
+    function renderAtendenteView() {
+      const lista = state.consultas;
+      const tbody = $('tbody-atendente-consultas');
+      if(!tbody) return;
+
+      tbody.innerHTML = lista.length === 0
+        ? `<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>`
+        : lista.map(c => `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-800">${esc(c.paciente)}<span class="block text-xs font-normal text-slate-400">${esc(c.telefone)}</span></td>
+            <td class="py-3.
   </script>
   <style type="text/tailwindcss">
     @layer base { body { @apply font-sans; } }
