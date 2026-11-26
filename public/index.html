@@ -24,7 +24,23 @@
       fontFamily: { sans: ["'Plus Jakarta Sans'", 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'] },
       colors: { brand: { 50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 900: '#134E4A' } }
     } } }
-  <!-- Sistema Core em JavaScript integrado com Supabase -->
+  
+  
+  </script>
+  <style type="text/tailwindcss">
+    @layer base { body { @apply font-sans; } }
+    @layer components {
+      .card { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
+      .label { @apply block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1; }
+      .field { @apply w-full rounded-xl border border-slate-200 px-3.5 py-3 sm:py-2.5 text-base sm:text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500; }
+      .role-btn { @apply px-2.5 sm:px-3.5 py-2 sm:py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-700 transition-all; }
+      .role-btn.is-active { @apply font-semibold shadow-sm bg-white text-brand-700; }
+      .btn-sm { @apply px-3 py-2 sm:px-2.5 sm:py-1 font-bold rounded-lg text-xs transition; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<!-- Sistema Core em JavaScript integrado com Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // ===== CONFIGURAÇÃO DO SUPABASE =====
@@ -54,10 +70,86 @@
     const $ = id => document.getElementById(id);
     const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     const pad = n => String(n).padStart(2, '0');
-    const isoLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; const hojeISO = (somarDias = 0) => { const d = new Date(); d.setDate(d.getDate() + somarDias); return isoLocal(d); }; const formatDate = s => { if (!s) return ''; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
+    const isoLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const hojeISO = (somarDias = 0) => { const d = new Date(); d.setDate(d.getDate() + somarDias); return isoLocal(d); };
+    const formatDate = s => { if (!s) return ''; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
     const badgeStatus = (status, extra = 'px-2.5 py-0.5 text-xs') =>
-      `<span class="inline-flex items-center rounded-full font-bold ${extra} ${STATUS_BADGE[status] \vert{}\vert{} STATUS_BADGE.Pendente}">${esc(status)}</span>`;
-    const emptyMsg = texto => `<p class="text-xs text-slate-400 italic">${texto}</p>`;  // ===== ESTADO DO APLICATIVO (Sincronizado com Supabase) ===== let state = { consultas: [], bloqueios: [], consultaSimulada: null };  // Funções de Comunicação com o Supabase async function carregarDadosDoBanco() { try { const { data: resConsultas, error: errC } = await supabase.from('consultas').select('*').order('created_at', { ascending: false }); if (errC) console.error('Erro ao buscar consultas:', errC);  const { data: resBloqueios, error: errB } = await supabase.from('bloqueios').select('*'); if (errB) console.error('Erro ao buscar bloqueios:', errB);  state.consultas = resConsultas \vert{}\vert{} []; state.bloqueios = resBloqueios \vert{}\vert{} [];  refreshAll(); } catch (e) { console.error('Erro de conexão com o Supabase:', e); showToast('Erro ao carregar dados do banco.', 'error'); } }  async function salvarConsultaNoBanco(novaConsulta) { const { error } = await supabase.from('consultas').insert([novaConsulta]); if (error) { showToast('Erro ao salvar agendamento no Supabase.', 'error'); console.error(error); return false; } return true; }  async function atualizarStatusConsultaNoBanco(id, novoStatus) { const { error } = await supabase.from('consultas').update({ status: novoStatus }).eq('id', id); if (error) { showToast('Erro ao atualizar status.', 'error'); return false; } return true; }  async function salvarBloqueioNoBanco(novoBloqueio) { const { error } = await supabase.from('bloqueios').insert([novoBloqueio]); if (error) { showToast('Erro ao bloquear horário.', 'error'); return false; } return true; }  const findConsulta = id => state.consultas.find(c => c.id === id);  function refreshAll() { renderListaPaciente(); renderAtendenteView(); renderAgendaMedico(); renderHorariosDisponiveis(); }  // ===== TOAST / NOTIFICAÇÕES ===== const TOAST_STYLE = { success: ['bg-emerald-600', 'fa-circle-check'], error: ['bg-red-600', 'fa-circle-exclamation'], info: ['bg-slate-800', 'fa-bell'] }; function showToast(message, type = 'success') { const [bg, icon] = TOAST_STYLE[type] \vert{}\vert{} TOAST_STYLE.info; const toast = document.createElement('div'); toast.className = `${bg} text-white px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-xs font-medium transform transition-all duration-300 translate-y-2 opacity-0`;
+      `<span class="inline-flex items-center rounded-full font-bold ${extra} ${STATUS_BADGE[status] || STATUS_BADGE.Pendente}">${esc(status)}</span>`;
+    const emptyMsg = texto => `<p class="text-xs text-slate-400 italic">${texto}</p>`;
+
+    // ===== ESTADO DO APLICATIVO (Sincronizado com Supabase) =====
+    let state = {
+      consultas: [],
+      bloqueios: [],
+      consultaSimulada: null
+    };
+
+    // Funções de Comunicação com o Supabase
+    async function carregarDadosDoBanco() {
+      try {
+        const { data: resConsultas, error: errC } = await supabase.from('consultas').select('*').order('created_at', { ascending: false });
+        if (errC) console.error('Erro ao buscar consultas:', errC);
+
+        const { data: resBloqueios, error: errB } = await supabase.from('bloqueios').select('*');
+        if (errB) console.error('Erro ao buscar bloqueios:', errB);
+
+        state.consultas = resConsultas || [];
+        state.bloqueios = resBloqueios || [];
+
+        refreshAll();
+      } catch (e) {
+        console.error('Erro de conexão com o Supabase:', e);
+        showToast('Erro ao carregar dados do banco.', 'error');
+      }
+    }
+
+    async function salvarConsultaNoBanco(novaConsulta) {
+      const { error } = await supabase.from('consultas').insert([novaConsulta]);
+      if (error) {
+        showToast('Erro ao salvar agendamento no Supabase.', 'error');
+        console.error(error);
+        return false;
+      }
+      return true;
+    }
+
+    async function atualizarStatusConsultaNoBanco(id, novoStatus) {
+      const { error } = await supabase.from('consultas').update({ status: novoStatus }).eq('id', id);
+      if (error) {
+        showToast('Erro ao atualizar status.', 'error');
+        return false;
+      }
+      return true;
+    }
+
+    async function salvarBloqueioNoBanco(novoBloqueio) {
+      const { error } = await supabase.from('bloqueios').insert([novoBloqueio]);
+      if (error) {
+        showToast('Erro ao bloquear horário.', 'error');
+        return false;
+      }
+      return true;
+    }
+
+    const findConsulta = id => state.consultas.find(c => c.id === id);
+
+    function refreshAll() {
+      renderListaPaciente();
+      renderAtendenteView();
+      renderAgendaMedico();
+      renderHorariosDisponiveis();
+    }
+
+    // ===== TOAST / NOTIFICAÇÕES =====
+    const TOAST_STYLE = {
+      success: ['bg-emerald-600', 'fa-circle-check'],
+      error: ['bg-red-600', 'fa-circle-exclamation'],
+      info: ['bg-slate-800', 'fa-bell']
+    };
+    function showToast(message, type = 'success') {
+      const [bg, icon] = TOAST_STYLE[type] || TOAST_STYLE.info;
+      const toast = document.createElement('div');
+      toast.className = `${bg} text-white px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-xs font-medium transform transition-all duration-300 translate-y-2 opacity-0`;
       toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${esc(message)}</span>`;
       $('toast-container').appendChild(toast);
       setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
@@ -185,22 +277,86 @@
         : lista.map(c => `
           <tr class="hover:bg-slate-50 transition">
             <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-800">${esc(c.paciente)}<span class="block text-xs font-normal text-slate-400">${esc(c.telefone)}</span></td>
-            <td class="py-3.
-  </script>
-  <style type="text/tailwindcss">
-    @layer base { body { @apply font-sans; } }
-    @layer components {
-      .card { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
-      .label { @apply block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1; }
-      .field { @apply w-full rounded-xl border border-slate-200 px-3.5 py-3 sm:py-2.5 text-base sm:text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500; }
-      .role-btn { @apply px-2.5 sm:px-3.5 py-2 sm:py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-700 transition-all; }
-      .role-btn.is-active { @apply font-semibold shadow-sm bg-white text-brand-700; }
-      .btn-sm { @apply px-3 py-2 sm:px-2.5 sm:py-1 font-bold rounded-lg text-xs transition; }
+            <td class="py-3.5 px-4 sm:px-6 text-slate-600">${esc(c.medico)}</td>
+            <td class="py-3.5 px-4 sm:px-6 text-slate-600">${formatDate(c.data)} às ${c.hora}</td>
+            <td class="py-3.5 px-4 sm:px-6">${badgeStatus(c.status)}</td>
+            <td class="py-3.5 px-4 sm:px-6 text-right space-x-1">
+              <button onclick="mudarStatus('${c.id}', 'Confirmado')" class="btn-sm bg-green-100 text-green-700 hover:bg-green-200"><i class="fa-solid fa-check"></i></button>
+              <button onclick="mudarStatus('${c.id}', 'Cancelado')" class="btn-sm bg-red-100 text-red-700 hover:bg-red-200"><i class="fa-solid fa-xmark"></i></button>
+            </td>
+          </tr>`).join('');
     }
-  </style>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
+    window.mudarStatus = async function(id, status) {
+      const sucesso = await atualizarStatusConsultaNoBanco(id, status);
+      if(sucesso) {
+        await carregarDadosDoBanco();
+        showToast(`Status atualizado para ${status}!`);
+      }
+    };
+
+    function renderAgendaMedico() {
+      const filtro = $('select-filtro-medico')?.value;
+      const container = $('lista-medico-agenda');
+      if(!container) return;
+
+      const filtradas = filtro ? state.consultas.filter(c => c.medico === filtro && c.status !== 'Cancelado') : state.consultas.filter(c => c.status !== 'Cancelado');
+
+      container.innerHTML = filtradas.length === 0
+        ? emptyMsg('Nenhum paciente agendado para este profissional.')
+        : filtradas.map(c => `
+          <div class="p-4 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between text-xs">
+            <div>
+              <div class="font-bold text-slate-900">${esc(c.paciente)} (${esc(c.telefone)})</div>
+              <div class="text-slate-500">Motivo: ${esc(c.motivo)}</div>
+              <div class="text-brand-700 font-semibold mt-1"><i class="fa-regular fa-calendar mr-1"></i>${formatDate(c.data)} às ${c.hora}</div>
+            </div>
+            <div>${badgeStatus(c.status)}</div>
+          </div>`).join('');
+    }
+
+    // Inicialização da Aplicação
+    document.addEventListener("DOMContentLoaded", () => {
+      const options = MEDICOS.map(m => `<option value="${esc(m.id)}">${esc(m.label)}</option>`).join('');
+      if($('select-medico')) $('select-medico').innerHTML = '<option value="">Selecione um médico...</option>' + options;
+      if($('select-filtro-medico')) {
+        $('select-filtro-medico').innerHTML = options;
+        $('select-filtro-medico').addEventListener('change', renderAgendaMedico);
+      }
+
+      // Eventos de Navegação
+      document.querySelectorAll('[data-action="role"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const role = btn.dataset.role;
+          document.querySelectorAll('[data-action="role"]').forEach(b => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          ['paciente', 'atendente', 'medico'].forEach(r => {
+            const el = $(`view-${r}`);
+            if(el) el.classList.toggle('hidden', r !== role);
+          });
+          if($('badge-current-role')) $('badge-current-role').innerText = ROLES[role].badge;
+          if($('role-description')) $('role-description').innerText = ROLES[role].desc;
+        });
+      });
+
+      // Eventos de formulário
+      const formAgendamento = $('form-agendamento');
+      if(formAgendamento) formAgendamento.addEventListener('submit', handleAgendamento);
+
+      if($('select-medico')) $('select-medico').addEventListener('change', renderHorariosDisponiveis);
+      if($('input-data')) {
+        $('input-data').addEventListener('change', renderHorariosDisponiveis);
+        $('input-data').value = hojeISO();
+      }
+
+      // Botões do simulador de lembrete
+      document.querySelectorAll('[data-action="sim-confirmar"]').forEach(b => b.addEventListener('click', () => simularResposta('Confirmado')));
+      document.querySelectorAll('[data-action="sim-cancelar"]').forEach(b => b.addEventListener('click', () => simularResposta('Cancelado')));
+
+      // Carrega os dados reais do Supabase ao abrir a página
+      carregarDadosDoBanco();
+    });
+  </script>
   <!-- Header / Navbar -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
